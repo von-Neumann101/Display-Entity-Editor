@@ -112,6 +112,11 @@ public final class ModNetwork {
         return DisplayTransform.rayIntersection(display, start, end).isPresent();
     }
 
+    private static boolean isDisplayNear(ServerPlayer player, Display display) {
+        return DisplayTransform.visualBounds(display)
+                .distanceToSqr(player.getEyePosition(1.0F)) <= 64.0D;
+    }
+
     private static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             syncGroups(player);
@@ -146,7 +151,7 @@ public final class ModNetwork {
             }
 
             Entity entity = player.serverLevel().getEntity(message.entityId);
-            if (entity instanceof Display display && player.distanceToSqr(display) <= 64.0D) {
+            if (entity instanceof Display display && isDisplayNear(player, display)) {
                 DisplayTransform.apply(display, message.values);
             }
         }

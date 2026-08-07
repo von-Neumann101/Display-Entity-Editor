@@ -40,7 +40,7 @@ public class TypeSelectionScreen extends Screen {
     private Component status = Component.empty();
 
     public TypeSelectionScreen(InteractionHand hand) {
-        super(Component.translatable("screen.examplemod.type_menu"));
+        super(Component.translatable("screen.display_entity_editor.type_menu"));
         this.hand = hand;
         ItemStack stack = Minecraft.getInstance().player == null
                 ? ItemStack.EMPTY : Minecraft.getInstance().player.getItemInHand(hand);
@@ -59,17 +59,17 @@ public class TypeSelectionScreen extends Screen {
         for (int index = 0; index < DisplayKind.values().length; index++) {
             DisplayKind option = DisplayKind.values()[index];
             addRenderableWidget(Button.builder(
-                            Component.translatable("screen.examplemod.type." + option.id()),
+                            Component.translatable("screen.display_entity_editor.type." + option.id()),
                             button -> chooseKind(option))
                     .bounds(panelX + 6 + index * (typeWidth + 4), panelY + 28, typeWidth, 20)
                     .build());
         }
 
         search = new EditBox(font, panelX + 6, panelY + 54, panelWidth - 12, 20,
-                Component.translatable("screen.examplemod.content"));
+                Component.translatable("screen.display_entity_editor.content"));
         search.setMaxLength(128);
         search.setHint(Component.translatable(kind == DisplayKind.TEXT
-                ? "screen.examplemod.text_hint" : "screen.examplemod.search_hint"));
+                ? "screen.display_entity_editor.text_hint" : "screen.display_entity_editor.search_hint"));
         if (kind == DisplayKind.TEXT && current.kind() == DisplayKind.TEXT) {
             search.setValue(current.content());
         }
@@ -106,7 +106,7 @@ public class TypeSelectionScreen extends Screen {
             }
             Button button = resultButtons.get(0);
             button.visible = true;
-            button.setMessage(Component.translatable("screen.examplemod.select_text"));
+            button.setMessage(Component.translatable("screen.display_entity_editor.select_text"));
             return;
         }
 
@@ -126,8 +126,8 @@ public class TypeSelectionScreen extends Screen {
             button.visible = resultIndex < results.size();
             if (button.visible) {
                 Entry entry = results.get(resultIndex);
-                button.setMessage(Component.translatable("screen.examplemod.selection_entry",
-                        Component.translatable("screen.examplemod.type." + kind.id()), entry.name));
+                button.setMessage(Component.translatable("screen.display_entity_editor.selection_entry",
+                        Component.translatable("screen.display_entity_editor.type." + kind.id()), entry.name));
             }
         }
     }
@@ -165,7 +165,7 @@ public class TypeSelectionScreen extends Screen {
 
     private void select(DisplaySelection selection) {
         if (minecraft.player == null || !selection.isValid()) {
-            status = Component.translatable("screen.examplemod.invalid_content");
+            status = Component.translatable("screen.display_entity_editor.invalid_content");
             return;
         }
         ItemStack stack = minecraft.player.getItemInHand(hand);
@@ -199,11 +199,11 @@ public class TypeSelectionScreen extends Screen {
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics);
         graphics.drawCenteredString(font, title, width / 2, panelY + 8, 0xFFFFFF);
-        Component currentText = Component.translatable("screen.examplemod.current_selection",
-                Component.translatable("screen.examplemod.type." + current.kind().id()), current.content());
+        Component currentText = Component.translatable("screen.display_entity_editor.current_selection",
+                Component.translatable("screen.display_entity_editor.type." + current.kind().id()), current.content());
         graphics.drawCenteredString(font, currentText, width / 2, panelY + 18, 0xA0A0A0);
         if (kind != DisplayKind.TEXT) {
-            Component pageText = Component.translatable("screen.examplemod.page",
+            Component pageText = Component.translatable("screen.display_entity_editor.page",
                     results.isEmpty() ? 0 : page + 1,
                     results.isEmpty() ? 0 : (results.size() - 1) / PAGE_SIZE + 1);
             graphics.drawCenteredString(font, pageText, width / 2, panelY + 194, 0xA0A0A0);

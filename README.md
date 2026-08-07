@@ -6,7 +6,7 @@
 
 进入游戏后，可在创造模式的“工具与实用物品”分类中找到“展示实体编辑器”，也可以使用命令：
 
-`/give @s examplemod:display_entity_editor`
+`/give @s display_entity_editor:display_entity_editor`
 
 ## 选择展示内容
 
@@ -33,7 +33,7 @@
 - EXCLUDE：普通左键只能选择不在当前组中的实体；`Alt + 左键`把实体加入当前组。
 - ONLY：普通左键只能选择当前组中的实体；`Alt + 左键`把实体移出当前组。
 
-需要修改选择组数量时，可编辑游戏目录下 `config/examplemod-client.toml` 中的 `selectionGroupCount`。
+需要修改选择组数量时，可编辑游戏目录下 `config/display_entity_editor-client.toml` 中的 `selectionGroupCount`。
 
 ## 编辑模式
 

@@ -17,7 +17,7 @@ import net.minecraftforge.registries.RegistryObject;
 
 @Mod(ExampleMod.MODID)
 public class ExampleMod {
-    public static final String MODID = "examplemod";
+    public static final String MODID = "display_entity_editor";
     public static final int MAX_SELECTION_GROUPS = 64;
     public static final ForgeConfigSpec.IntValue SELECTION_GROUP_COUNT;
     private static final ForgeConfigSpec CLIENT_CONFIG;

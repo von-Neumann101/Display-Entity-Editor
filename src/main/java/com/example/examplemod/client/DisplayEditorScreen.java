@@ -35,7 +35,7 @@ public class DisplayEditorScreen extends Screen {
     }
 
     public DisplayEditorScreen(Display display, DisplayTransform.Values values) {
-        super(Component.translatable("screen.examplemod.display_editor"));
+        super(Component.translatable("screen.display_entity_editor.display_editor"));
         this.entityId = display.getId();
         this.values = values;
     }
@@ -62,7 +62,7 @@ public class DisplayEditorScreen extends Screen {
                 int index = row * 3 + column;
                 EditBox field = new EditBox(font, fieldsX + column * (fieldWidth + gap),
                         panelY + (narrowLayout ? 51 + row * 43 : 45 + row * 25), fieldWidth, 20,
-                        Component.translatable("screen.examplemod.value"));
+                        Component.translatable("screen.display_entity_editor.value"));
                 field.setMaxLength(16);
                 field.setFilter(DisplayEditorScreen::isNumericInput);
                 fields[index] = addRenderableWidget(field);
@@ -74,11 +74,11 @@ public class DisplayEditorScreen extends Screen {
         int gapWidth = 4;
         int buttonWidth = (panelWidth - 16 - gapWidth * 2) / 3;
         int buttonY = panelY + (narrowLayout ? 163 : 121);
-        addRenderableWidget(Button.builder(Component.translatable("screen.examplemod.apply"), button -> applyNumeric())
+        addRenderableWidget(Button.builder(Component.translatable("screen.display_entity_editor.apply"), button -> applyNumeric())
                 .bounds(panelX + 8, buttonY, buttonWidth, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.examplemod.reset"), button -> resetNumeric())
+        addRenderableWidget(Button.builder(Component.translatable("screen.display_entity_editor.reset"), button -> resetNumeric())
                 .bounds(panelX + 8 + buttonWidth + gapWidth, buttonY, buttonWidth, 20).build());
-        addRenderableWidget(Button.builder(Component.translatable("screen.examplemod.close"), button -> onClose())
+        addRenderableWidget(Button.builder(Component.translatable("screen.display_entity_editor.close"), button -> onClose())
                 .bounds(panelX + 8 + (buttonWidth + gapWidth) * 2, buttonY, buttonWidth, 20).build());
     }
 
@@ -101,19 +101,19 @@ public class DisplayEditorScreen extends Screen {
     private void applyNumeric() {
         DisplayTransform.Values parsed = readFields();
         if (parsed == null || !parsed.isValid()) {
-            status = Component.translatable("screen.examplemod.invalid_short");
+            status = Component.translatable("screen.display_entity_editor.invalid_short");
             return;
         }
         values = parsed;
         ModNetwork.sendUpdate(entityId, values);
-        status = Component.translatable("screen.examplemod.applied");
+        status = Component.translatable("screen.display_entity_editor.applied");
     }
 
     private void resetNumeric() {
         values = DisplayTransform.DEFAULT;
         setFieldValues(values);
         ModNetwork.sendUpdate(entityId, values);
-        status = Component.translatable("screen.examplemod.applied");
+        status = Component.translatable("screen.display_entity_editor.applied");
     }
 
     private DisplayTransform.Values readFields() {
@@ -247,7 +247,7 @@ public class DisplayEditorScreen extends Screen {
         graphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight, 0xA0000000);
         Component mode = Component.translatable(ClientEvents.editMode().translationKey());
         graphics.drawString(font, mode, panelX + 7, panelY + 6, 0xFFFFFF, false);
-        graphics.drawString(font, Component.translatable("screen.examplemod.mode_hint",
+        graphics.drawString(font, Component.translatable("screen.display_entity_editor.mode_hint",
                         ClientEvents.MODE_KEY.getTranslatedKeyMessage()),
                 panelX + 7, panelY + 18, 0xA0A0A0, false);
 
@@ -255,7 +255,7 @@ public class DisplayEditorScreen extends Screen {
             renderNumericLabels(graphics);
         } else {
             graphics.drawString(font, Component.translatable(narrowLayout
-                            ? "screen.examplemod.slider_hint_short" : "screen.examplemod.view_hint"),
+                            ? "screen.display_entity_editor.slider_hint_short" : "screen.display_entity_editor.view_hint"),
                     panelX + 7, panelY + 30, 0xA0A0A0, false);
         }
         super.render(graphics, mouseX, mouseY, partialTick);
@@ -266,9 +266,9 @@ public class DisplayEditorScreen extends Screen {
             int fieldWidth = (panelWidth - 24) / 3;
             for (int row = 0; row < 3; row++) {
                 Component label = Component.translatable(switch (row) {
-                    case 0 -> "screen.examplemod.position_short";
-                    case 1 -> "screen.examplemod.rotation_short";
-                    default -> "screen.examplemod.scale_short";
+                    case 0 -> "screen.display_entity_editor.position_short";
+                    case 1 -> "screen.display_entity_editor.rotation_short";
+                    default -> "screen.display_entity_editor.scale_short";
                 });
                 int labelY = panelY + 32 + row * 43;
                 graphics.drawString(font, label, panelX + 7, labelY, 0xFFFFFF, false);
@@ -288,11 +288,11 @@ public class DisplayEditorScreen extends Screen {
             int x = fieldAreaX + axis * available / 3 + available / 6 - font.width(AXES[axis]) / 2;
             graphics.drawString(font, AXES[axis], x, panelY + 33, 0xA0A0A0, false);
         }
-        graphics.drawString(font, Component.translatable("screen.examplemod.position_short"),
+        graphics.drawString(font, Component.translatable("screen.display_entity_editor.position_short"),
                 panelX + 7, panelY + 51, 0xFFFFFF, false);
-        graphics.drawString(font, Component.translatable("screen.examplemod.rotation_short"),
+        graphics.drawString(font, Component.translatable("screen.display_entity_editor.rotation_short"),
                 panelX + 7, panelY + 76, 0xFFFFFF, false);
-        graphics.drawString(font, Component.translatable("screen.examplemod.scale_short"),
+        graphics.drawString(font, Component.translatable("screen.display_entity_editor.scale_short"),
                 panelX + 7, panelY + 101, 0xFFFFFF, false);
         graphics.drawString(font, status, panelX + 8, panelY + 146, 0xFFFF55, false);
     }
@@ -315,7 +315,7 @@ public class DisplayEditorScreen extends Screen {
         protected void updateMessage() {
             setMessage(Component.translatable(
                     ClientEvents.editMode() == ClientEvents.EditMode.SCALE
-                            ? "screen.examplemod.scale_slider" : "screen.examplemod.rotation_slider",
+                            ? "screen.display_entity_editor.scale_slider" : "screen.display_entity_editor.rotation_slider",
                     AXES[axis], format(current(axis), 100.0F)));
         }
 

@@ -9,9 +9,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+
+import java.util.Optional;
 
 public final class DisplayTransform {
     public static final float MAX_TRANSLATION = 128.0F;
@@ -63,19 +66,7 @@ public final class DisplayTransform {
 
     public static AABB visualBounds(Display display) {
         Matrix4f matrix = readTransformation(display).getMatrix();
-        Vector3f pivot = pivot(display);
-        Vector3f min;
-        Vector3f max;
-        if (display instanceof Display.BlockDisplay) {
-            min = new Vector3f();
-            max = new Vector3f(1.0F);
-        } else if (display instanceof Display.ItemDisplay) {
-            min = new Vector3f(-0.5F);
-            max = new Vector3f(0.5F);
-        } else {
-            min = new Vector3f(pivot).add(-1.0F, -0.25F, -0.05F);
-            max = new Vector3f(pivot).add(1.0F, 0.25F, 0.05F);
-        }
+        AABB local = localBounds(display);
 
         Vector3f corner = new Vector3f();
         double minX = Double.POSITIVE_INFINITY;
@@ -86,9 +77,9 @@ public final class DisplayTransform {
         double maxZ = Double.NEGATIVE_INFINITY;
         for (int index = 0; index < 8; index++) {
             corner.set(
-                    (index & 1) == 0 ? min.x : max.x,
-                    (index & 2) == 0 ? min.y : max.y,
-                    (index & 4) == 0 ? min.z : max.z);
+                    (float) ((index & 1) == 0 ? local.minX : local.maxX),
+                    (float) ((index & 2) == 0 ? local.minY : local.maxY),
+                    (float) ((index & 4) == 0 ? local.minZ : local.maxZ));
             matrix.transformPosition(corner);
             minX = Math.min(minX, corner.x);
             minY = Math.min(minY, corner.y);
@@ -98,6 +89,51 @@ public final class DisplayTransform {
             maxZ = Math.max(maxZ, corner.z);
         }
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ).move(display.position()).inflate(0.01D);
+    }
+
+    public static Optional<Vec3> rayIntersection(Display display, Vec3 start, Vec3 end) {
+        Matrix4f matrix = readTransformation(display).getMatrix();
+        float determinant = matrix.determinant();
+        if (!Float.isFinite(determinant) || Math.abs(determinant) < 1.0E-8F) {
+            return Optional.empty();
+        }
+
+        Matrix4f inverse = new Matrix4f(matrix).invert();
+        Vector3f localStart = inverse.transformPosition(new Vector3f(
+                (float) (start.x - display.getX()),
+                (float) (start.y - display.getY()),
+                (float) (start.z - display.getZ())));
+        Vector3f localEnd = inverse.transformPosition(new Vector3f(
+                (float) (end.x - display.getX()),
+                (float) (end.y - display.getY()),
+                (float) (end.z - display.getZ())));
+        Vec3 localStartVec = new Vec3(localStart.x, localStart.y, localStart.z);
+        AABB bounds = localBounds(display);
+        Vec3 localHit = bounds.contains(localStartVec)
+                ? localStartVec
+                : bounds.clip(localStartVec, new Vec3(localEnd.x, localEnd.y, localEnd.z)).orElse(null);
+        if (localHit == null) {
+            return Optional.empty();
+        }
+
+        Vector3f offset = matrix.transformPosition(new Vector3f(
+                (float) localHit.x, (float) localHit.y, (float) localHit.z));
+        return Optional.of(new Vec3(
+                display.getX() + offset.x,
+                display.getY() + offset.y,
+                display.getZ() + offset.z));
+    }
+
+    private static AABB localBounds(Display display) {
+        if (display instanceof Display.BlockDisplay) {
+            return new AABB(0.0D, 0.0D, 0.0D, 1.0D, 1.0D, 1.0D);
+        }
+        if (display instanceof Display.ItemDisplay) {
+            return new AABB(-0.5D, -0.5D, -0.5D, 0.5D, 0.5D, 0.5D);
+        }
+        Vector3f pivot = pivot(display);
+        return new AABB(pivot.x - 1.0D, pivot.y - 0.25D, pivot.z - 0.05D,
+                pivot.x + 1.0D, pivot.y + 0.25D, pivot.z + 0.05D);
     }
 
     private static Transformation readTransformation(Display display) {

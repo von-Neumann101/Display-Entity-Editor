@@ -17,6 +17,7 @@
   "key.categories.examplemod": "\u5c55\u793a\u5b9e\u4f53\u7f16\u8f91\u5668",
   "key.examplemod.type_menu": "\u9009\u62e9\u5c55\u793a\u7c7b\u578b\u4e0e\u5185\u5bb9",
   "key.examplemod.mode": "\u5207\u6362\u6570\u503c / \u89c6\u56fe\u6a21\u5f0f",
+  "key.examplemod.group_mode": "\u5207\u6362\u9009\u62e9\u7ec4\u8fc7\u6ee4\u6a21\u5f0f",
   "screen.examplemod.type_menu": "\u9009\u62e9\u5c55\u793a\u7c7b\u578b\u4e0e\u5185\u5bb9",
   "screen.examplemod.type.block": "\u65b9\u5757\u5c55\u793a\u5b9e\u4f53",
   "screen.examplemod.type.item": "\u7269\u54c1\u5c55\u793a\u5b9e\u4f53",
@@ -37,5 +38,11 @@
   "hud.examplemod.numeric": "\u6570\u503c\u6a21\u5f0f",
   "hud.examplemod.scale": "\u7f29\u653e\u6a21\u5f0f",
   "hud.examplemod.rotation": "\u65cb\u8f6c\u6a21\u5f0f",
-  "hud.examplemod.mode_hint": "%s\uff1a\u6570\u503c / \u89c6\u56fe"
+  "hud.examplemod.group": "\u7ec4 %s/%s - %s",
+  "hud.examplemod.exclude": "EXCLUDE",
+  "hud.examplemod.only": "ONLY",
+  "hud.examplemod.group_hint": "Shift+\u6eda\u8f6e\uff1a\u5207\u6362\u7ec4 | %s\uff1a\u8fc7\u6ee4\u6a21\u5f0f",
+  "hud.examplemod.group_hint_short": "Shift+\u6eda\u8f6e | %s",
+  "hud.examplemod.group_add": "Alt+\u5de6\u952e\uff1a\u52a0\u5165\u5f53\u524d\u7ec4",
+  "hud.examplemod.group_remove": "Alt+\u5de6\u952e\uff1a\u79fb\u51fa\u5f53\u524d\u7ec4"
 }

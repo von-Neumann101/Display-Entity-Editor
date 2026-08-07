@@ -6,7 +6,9 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
@@ -16,6 +18,16 @@ import net.minecraftforge.registries.RegistryObject;
 @Mod(ExampleMod.MODID)
 public class ExampleMod {
     public static final String MODID = "examplemod";
+    public static final int MAX_SELECTION_GROUPS = 64;
+    public static final ForgeConfigSpec.IntValue SELECTION_GROUP_COUNT;
+    private static final ForgeConfigSpec CLIENT_CONFIG;
+
+    static {
+        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        SELECTION_GROUP_COUNT = builder.comment("Number of display selection groups")
+                .defineInRange("selectionGroupCount", 9, 1, MAX_SELECTION_GROUPS);
+        CLIENT_CONFIG = builder.build();
+    }
 
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
     public static final RegistryObject<Item> DISPLAY_EDITOR = ITEMS.register("display_entity_editor",
@@ -23,6 +35,7 @@ public class ExampleMod {
 
     public ExampleMod(FMLJavaModLoadingContext context) {
         IEventBus modBus = context.getModEventBus();
+        context.registerConfig(ModConfig.Type.CLIENT, CLIENT_CONFIG);
         ITEMS.register(modBus);
         modBus.addListener(this::commonSetup);
         modBus.addListener(this::addCreativeTabContents);

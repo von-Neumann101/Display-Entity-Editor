@@ -1,12 +1,15 @@
 package com.example.examplemod.client;
 
 import com.example.examplemod.ExampleMod;
+import com.example.examplemod.network.ModNetwork;
 import com.example.examplemod.util.DisplayTransform;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -22,10 +25,19 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Predicate;
 
 @Mod.EventBusSubscriber(modid = ExampleMod.MODID, value = Dist.CLIENT)
 public final class ClientEvents {
@@ -33,10 +45,16 @@ public final class ClientEvents {
             "key.examplemod.type_menu", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, "key.categories.examplemod");
     public static final KeyMapping MODE_KEY = new KeyMapping(
             "key.examplemod.mode", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, "key.categories.examplemod");
+    public static final KeyMapping GROUP_MODE_KEY = new KeyMapping(
+            "key.examplemod.group_mode", KeyConflictContext.IN_GAME, KeyModifier.ALT,
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Q, "key.categories.examplemod");
 
     private static int selectedEntityId = -1;
     private static EditMode editMode = EditMode.NUMERIC;
     private static EditMode viewEditMode = EditMode.SCALE;
+    private static final Map<Integer, Set<UUID>> SELECTION_GROUPS = new HashMap<>();
+    private static int currentGroup;
+    private static FilterMode filterMode = FilterMode.EXCLUDE;
 
     private ClientEvents() {
     }
@@ -61,6 +79,25 @@ public final class ClientEvents {
                 minecraft.setScreen(new DisplayEditorScreen(selected));
             }
         }
+        while (GROUP_MODE_KEY.consumeClick()) {
+            if (editorHand(minecraft) != null) {
+                filterMode = filterMode == FilterMode.EXCLUDE ? FilterMode.ONLY : FilterMode.EXCLUDE;
+                clearInvalidSelection();
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen != null || minecraft.player == null || editorHand(minecraft) == null
+                || !Screen.hasShiftDown() || event.getScrollDelta() == 0.0D) {
+            return;
+        }
+        int count = groupCount();
+        currentGroup = Math.floorMod(currentGroup + (event.getScrollDelta() > 0.0D ? -1 : 1), count);
+        clearInvalidSelection();
+        event.setCanceled(true);
     }
 
     @SubscribeEvent
@@ -71,15 +108,33 @@ public final class ClientEvents {
             return;
         }
 
-        Display display = findDisplay(minecraft);
-        if (display == null || (!event.isAttack() && !event.isUseItem())) {
+        if (!event.isAttack() && !event.isUseItem()) {
             return;
         }
 
-        selectedEntityId = display.getId();
-        if (event.isUseItem()) {
+        Display display = findDisplay(minecraft,
+                event.isAttack() ? ClientEvents::isSelectable : ignored -> true);
+        if (display == null) {
+            if (event.isAttack() && findDisplay(minecraft, ignored -> true) != null) {
+                cancelInteraction(event);
+            }
+            return;
+        }
+
+        if (event.isAttack()) {
+            if (Screen.hasAltDown()) {
+                changeGroup(display);
+            } else {
+                selectedEntityId = display.getId();
+            }
+        } else {
+            selectedEntityId = display.getId();
             minecraft.setScreen(new DisplayEditorScreen(display));
         }
+        cancelInteraction(event);
+    }
+
+    private static void cancelInteraction(InputEvent.InteractionKeyMappingTriggered event) {
         event.setSwingHand(false);
         event.setCanceled(true);
     }
@@ -129,6 +184,62 @@ public final class ClientEvents {
         viewEditMode = editMode;
     }
 
+    private static void loadGroups(CompoundTag data) {
+        SELECTION_GROUPS.clear();
+        for (String groupKey : data.getAllKeys()) {
+            try {
+                int group = Integer.parseInt(groupKey);
+                if (group < 0 || group >= ExampleMod.MAX_SELECTION_GROUPS) {
+                    continue;
+                }
+                Set<UUID> members = new HashSet<>();
+                CompoundTag memberData = data.getCompound(groupKey);
+                for (String entityKey : memberData.getAllKeys()) {
+                    if (memberData.getBoolean(entityKey)) {
+                        try {
+                            members.add(UUID.fromString(entityKey));
+                        } catch (IllegalArgumentException ignored) {
+                        }
+                    }
+                }
+                if (!members.isEmpty()) {
+                    SELECTION_GROUPS.put(group, members);
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        clearInvalidSelection();
+    }
+
+    private static int groupCount() {
+        int count = ExampleMod.SELECTION_GROUP_COUNT.get();
+        currentGroup = Math.min(currentGroup, count - 1);
+        return count;
+    }
+
+    private static Set<UUID> currentMembers() {
+        groupCount();
+        return SELECTION_GROUPS.computeIfAbsent(currentGroup, ignored -> new HashSet<>());
+    }
+
+    private static boolean isSelectable(Display display) {
+        boolean member = currentMembers().contains(display.getUUID());
+        return filterMode == FilterMode.ONLY ? member : !member;
+    }
+
+    private static void changeGroup(Display display) {
+        boolean add = filterMode == FilterMode.EXCLUDE;
+        selectedEntityId = -1;
+        ModNetwork.sendGroupChange(currentGroup, display.getUUID(), add);
+    }
+
+    private static void clearInvalidSelection() {
+        Display selected = selectedDisplay();
+        if (selected != null && !isSelectable(selected)) {
+            selectedEntityId = -1;
+        }
+    }
+
     private static InteractionHand editorHand(Minecraft minecraft) {
         if (minecraft.player.getMainHandItem().is(ExampleMod.DISPLAY_EDITOR.get())) {
             return InteractionHand.MAIN_HAND;
@@ -137,22 +248,21 @@ public final class ClientEvents {
                 ? InteractionHand.OFF_HAND : null;
     }
 
-    private static Display findDisplay(Minecraft minecraft) {
+    private static Display findDisplay(Minecraft minecraft, Predicate<Display> filter) {
         Vec3 start = minecraft.player.getEyePosition(1.0F);
         double reach = minecraft.player.getEntityReach();
         Vec3 end = start.add(minecraft.player.getViewVector(1.0F).scale(reach));
         double closestDistance = reach * reach;
-        if (minecraft.hitResult != null && minecraft.hitResult.getType() != HitResult.Type.MISS) {
+        if (minecraft.hitResult != null && minecraft.hitResult.getType() == HitResult.Type.BLOCK) {
             closestDistance = Math.min(closestDistance, start.distanceToSqr(minecraft.hitResult.getLocation()));
         }
 
         Display closest = null;
-        AABB searchArea = new AABB(start, end).inflate(8.0D);
-        for (Entity entity : minecraft.level.getEntities(minecraft.player, searchArea,
-                candidate -> candidate instanceof Display)) {
-            Display display = (Display) entity;
-            AABB bounds = DisplayTransform.visualBounds(display);
-            Vec3 hit = bounds.contains(start) ? start : bounds.clip(start, end).orElse(null);
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            if (!(entity instanceof Display display) || !filter.test(display)) {
+                continue;
+            }
+            Vec3 hit = DisplayTransform.rayIntersection(display, start, end).orElse(null);
             if (hit != null) {
                 double distance = start.distanceToSqr(hit);
                 if (distance <= closestDistance) {
@@ -170,10 +280,17 @@ public final class ClientEvents {
                 || editorHand(minecraft) == null) {
             return;
         }
-        Component mode = Component.translatable(editMode.translationKey);
-        Component hint = Component.translatable("hud.examplemod.mode_hint", MODE_KEY.getTranslatedKeyMessage());
-        graphics.drawString(minecraft.font, mode, width - minecraft.font.width(mode) - 8, 8, 0xFFFFFF, true);
-        graphics.drawString(minecraft.font, hint, width - minecraft.font.width(hint) - 8, 19, 0xA0A0A0, true);
+        int count = groupCount();
+        Component status = Component.translatable("hud.examplemod.group",
+                currentGroup + 1, count, Component.translatable(filterMode.translationKey));
+        Component hint = Component.translatable(width < 420
+                        ? "hud.examplemod.group_hint_short" : "hud.examplemod.group_hint",
+                GROUP_MODE_KEY.getTranslatedKeyMessage());
+        Component action = Component.translatable(filterMode == FilterMode.EXCLUDE
+                ? "hud.examplemod.group_add" : "hud.examplemod.group_remove");
+        graphics.drawString(minecraft.font, status, 8, 8, 0xFFFFFF, true);
+        graphics.drawString(minecraft.font, hint, 8, 19, 0xA0A0A0, true);
+        graphics.drawString(minecraft.font, action, 8, 30, 0xA0A0A0, true);
     }
 
     public enum EditMode {
@@ -192,6 +309,17 @@ public final class ClientEvents {
         }
     }
 
+    private enum FilterMode {
+        EXCLUDE("hud.examplemod.exclude"),
+        ONLY("hud.examplemod.only");
+
+        private final String translationKey;
+
+        FilterMode(String translationKey) {
+            this.translationKey = translationKey;
+        }
+    }
+
     @Mod.EventBusSubscriber(modid = ExampleMod.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
     public static final class ModEvents {
         private ModEvents() {
@@ -201,6 +329,8 @@ public final class ClientEvents {
         public static void registerKeys(RegisterKeyMappingsEvent event) {
             event.register(TYPE_MENU_KEY);
             event.register(MODE_KEY);
+            event.register(GROUP_MODE_KEY);
+            ModNetwork.setGroupSyncHandler(ClientEvents::loadGroups);
         }
 
         @SubscribeEvent

@@ -17,6 +17,7 @@
   "key.categories.examplemod": "Display Entity Editor",
   "key.examplemod.type_menu": "Choose Display Type and Content",
   "key.examplemod.mode": "Toggle Numeric / View Mode",
+  "key.examplemod.group_mode": "Toggle Selection Group Filter",
   "screen.examplemod.type_menu": "Choose Display Type and Content",
   "screen.examplemod.type.block": "Block Display",
   "screen.examplemod.type.item": "Item Display",
@@ -37,5 +38,11 @@
   "hud.examplemod.numeric": "Numeric Mode",
   "hud.examplemod.scale": "Scale Mode",
   "hud.examplemod.rotation": "Rotation Mode",
-  "hud.examplemod.mode_hint": "%s: Numeric / View"
+  "hud.examplemod.group": "Group %s/%s - %s",
+  "hud.examplemod.exclude": "EXCLUDE",
+  "hud.examplemod.only": "ONLY",
+  "hud.examplemod.group_hint": "Shift+Wheel: Group | %s: Filter",
+  "hud.examplemod.group_hint_short": "Shift+Wheel | %s",
+  "hud.examplemod.group_add": "Alt+Left Click: Add to group",
+  "hud.examplemod.group_remove": "Alt+Left Click: Remove from group"
 }

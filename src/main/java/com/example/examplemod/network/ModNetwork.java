@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public final class ModNetwork {
-    private static final String VERSION = "2";
+    private static final String VERSION = "3";
     private static final String GROUP_DATA_KEY = "DisplaySelectionGroups";
     private static final int MAX_GROUP_MEMBERS = 4096;
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
@@ -60,6 +60,11 @@ public final class ModNetwork {
                 .decoder(SyncGroups::decode)
                 .consumerMainThread(SyncGroups::handle)
                 .add();
+        CHANNEL.messageBuilder(ClearGroup.class, 4, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(ClearGroup::encode)
+                .decoder(ClearGroup::decode)
+                .consumerMainThread(ClearGroup::handle)
+                .add();
         MinecraftForge.EVENT_BUS.addListener(ModNetwork::onPlayerLogin);
     }
 
@@ -73,6 +78,10 @@ public final class ModNetwork {
 
     public static void sendGroupChange(int group, UUID entityUuid, boolean add) {
         CHANNEL.sendToServer(new ChangeGroup(group, entityUuid, add));
+    }
+
+    public static void sendClearGroup(int group) {
+        CHANNEL.sendToServer(new ClearGroup(group));
     }
 
     public static void setGroupSyncHandler(Consumer<CompoundTag> handler) {
@@ -225,6 +234,30 @@ public final class ModNetwork {
 
         private static void handle(SyncGroups message, Supplier<NetworkEvent.Context> contextSupplier) {
             groupSyncHandler.accept(message.groups.copy());
+        }
+    }
+
+    private record ClearGroup(int group) {
+        private void encode(FriendlyByteBuf buffer) {
+            buffer.writeVarInt(group);
+        }
+
+        private static ClearGroup decode(FriendlyByteBuf buffer) {
+            return new ClearGroup(buffer.readVarInt());
+        }
+
+        private static void handle(ClearGroup message, Supplier<NetworkEvent.Context> contextSupplier) {
+            ServerPlayer player = contextSupplier.get().getSender();
+            if (player == null) {
+                return;
+            }
+            if (!holdsEditor(player)
+                    || message.group < 0 || message.group >= ExampleMod.MAX_SELECTION_GROUPS) {
+                syncGroups(player);
+                return;
+            }
+            groupData(player).remove(Integer.toString(message.group));
+            syncGroups(player);
         }
     }
 }

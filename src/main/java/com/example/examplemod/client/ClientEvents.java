@@ -48,6 +48,9 @@ public final class ClientEvents {
     public static final KeyMapping GROUP_MODE_KEY = new KeyMapping(
             "key.examplemod.group_mode", KeyConflictContext.IN_GAME, KeyModifier.ALT,
             InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Q, "key.categories.examplemod");
+    public static final KeyMapping CLEAR_GROUP_KEY = new KeyMapping(
+            "key.examplemod.clear_group", KeyConflictContext.IN_GAME, KeyModifier.ALT,
+            InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_P, "key.categories.examplemod");
 
     private static int selectedEntityId = -1;
     private static EditMode editMode = EditMode.NUMERIC;
@@ -83,6 +86,13 @@ public final class ClientEvents {
             if (editorHand(minecraft) != null) {
                 filterMode = filterMode == FilterMode.EXCLUDE ? FilterMode.ONLY : FilterMode.EXCLUDE;
                 clearInvalidSelection();
+            }
+        }
+        while (CLEAR_GROUP_KEY.consumeClick()) {
+            if (editorHand(minecraft) != null && !currentMembers().isEmpty()) {
+                SELECTION_GROUPS.remove(currentGroup);
+                clearInvalidSelection();
+                ModNetwork.sendClearGroup(currentGroup);
             }
         }
     }
@@ -281,13 +291,20 @@ public final class ClientEvents {
             return;
         }
         int count = groupCount();
-        Component status = Component.translatable("hud.examplemod.group",
-                currentGroup + 1, count, Component.translatable(filterMode.translationKey));
-        Component hint = Component.translatable(width < 420
+        boolean compact = width < 640;
+        Component status = Component.translatable(width < 420
+                        ? "hud.examplemod.group_short" : "hud.examplemod.group",
+                currentGroup + 1, count, currentMembers().size(),
+                Component.translatable(filterMode.translationKey));
+        Component hint = Component.translatable(compact
                         ? "hud.examplemod.group_hint_short" : "hud.examplemod.group_hint",
                 GROUP_MODE_KEY.getTranslatedKeyMessage());
-        Component action = Component.translatable(filterMode == FilterMode.EXCLUDE
-                ? "hud.examplemod.group_add" : "hud.examplemod.group_remove");
+        Component action = Component.translatable(compact
+                        ? (filterMode == FilterMode.EXCLUDE
+                        ? "hud.examplemod.group_add_short" : "hud.examplemod.group_remove_short")
+                        : (filterMode == FilterMode.EXCLUDE
+                        ? "hud.examplemod.group_add" : "hud.examplemod.group_remove"),
+                CLEAR_GROUP_KEY.getTranslatedKeyMessage());
         graphics.drawString(minecraft.font, status, 8, 8, 0xFFFFFF, true);
         graphics.drawString(minecraft.font, hint, 8, 19, 0xA0A0A0, true);
         graphics.drawString(minecraft.font, action, 8, 30, 0xA0A0A0, true);
@@ -330,6 +347,7 @@ public final class ClientEvents {
             event.register(TYPE_MENU_KEY);
             event.register(MODE_KEY);
             event.register(GROUP_MODE_KEY);
+            event.register(CLEAR_GROUP_KEY);
             ModNetwork.setGroupSyncHandler(ClientEvents::loadGroups);
         }
 

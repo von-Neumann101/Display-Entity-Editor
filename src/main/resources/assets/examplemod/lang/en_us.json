@@ -18,6 +18,7 @@
   "key.examplemod.type_menu": "Choose Display Type and Content",
   "key.examplemod.mode": "Toggle Numeric / View Mode",
   "key.examplemod.group_mode": "Toggle Selection Group Filter",
+  "key.examplemod.clear_group": "Clear Current Selection Group",
   "screen.examplemod.type_menu": "Choose Display Type and Content",
   "screen.examplemod.type.block": "Block Display",
   "screen.examplemod.type.item": "Item Display",
@@ -38,11 +39,14 @@
   "hud.examplemod.numeric": "Numeric Mode",
   "hud.examplemod.scale": "Scale Mode",
   "hud.examplemod.rotation": "Rotation Mode",
-  "hud.examplemod.group": "Group %s/%s - %s",
+  "hud.examplemod.group": "Group %s/%s (%s entities) - %s",
+  "hud.examplemod.group_short": "G %s/%s [%s] %s",
   "hud.examplemod.exclude": "EXCLUDE",
   "hud.examplemod.only": "ONLY",
   "hud.examplemod.group_hint": "Shift+Wheel: Group | %s: Filter",
   "hud.examplemod.group_hint_short": "Shift+Wheel | %s",
-  "hud.examplemod.group_add": "Alt+Left Click: Add to group",
-  "hud.examplemod.group_remove": "Alt+Left Click: Remove from group"
+  "hud.examplemod.group_add": "Alt+Left Click: Add | %s: Clear",
+  "hud.examplemod.group_remove": "Alt+Left Click: Remove | %s: Clear",
+  "hud.examplemod.group_add_short": "Alt+Left: Add | %s",
+  "hud.examplemod.group_remove_short": "Alt+Left: Remove | %s"
 }

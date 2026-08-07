@@ -124,7 +124,7 @@ public final class ClientEvents {
 
         Display display = findDisplay(minecraft, ClientEvents::isSelectable);
         if (display == null) {
-            if (findDisplay(minecraft, ignored -> true) != null) {
+            if (event.isAttack() && findDisplay(minecraft, ignored -> true) != null) {
                 cancelInteraction(event);
             }
             return;
